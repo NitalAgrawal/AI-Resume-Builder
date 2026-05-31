@@ -1,6 +1,7 @@
 import express from "express";
 import axios from "axios";
 import protect from "../middlewares/authMiddleware.js";
+import CoverLetter from "../models/CoverLetter.js";
 
 const router = express.Router();
 
@@ -106,4 +107,101 @@ Instructions:
   }
 });
 
+// 1. POST /api/cover-letter/save
+router.post("/save", protect, async (req, res) => {
+  try {
+    const { jobTitle, companyName, jobDescription, tone, content, resumeId, title } = req.body;
+    const userId = req.userId || (req.user && (req.user.id || req.user._id));
+
+    if (!userId) {
+      return res.status(401).json({ error: "User unauthorized" });
+    }
+
+    const newCoverLetter = new CoverLetter({
+      userId,
+      resumeId,
+      jobTitle,
+      companyName,
+      jobDescription,
+      tone,
+      content,
+      title,
+    });
+
+    const savedDoc = await newCoverLetter.save();
+    return res.status(201).json({ success: true, coverLetter: savedDoc });
+  } catch (error) {
+    console.error("Error saving cover letter:", error);
+    return res.status(500).json({ error: `Failed to save cover letter: ${error.message}` });
+  }
+});
+
+// 2. GET /api/cover-letter/all
+router.get("/all", protect, async (req, res) => {
+  try {
+    const userId = req.userId || (req.user && (req.user.id || req.user._id));
+    if (!userId) {
+      return res.status(401).json({ error: "User unauthorized" });
+    }
+
+    const coverLetters = await CoverLetter.find({ userId }).sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, coverLetters });
+  } catch (error) {
+    console.error("Error fetching cover letters:", error);
+    return res.status(500).json({ error: `Failed to fetch cover letters: ${error.message}` });
+  }
+});
+
+// 3. GET /api/cover-letter/:id
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const userId = req.userId || (req.user && (req.user.id || req.user._id));
+    if (!userId) {
+      return res.status(401).json({ error: "User unauthorized" });
+    }
+
+    const coverLetter = await CoverLetter.findById(req.params.id);
+    if (!coverLetter) {
+      return res.status(404).json({ error: "Cover letter not found" });
+    }
+
+    // Verify it belongs to req.user.id, return 403 if not
+    if (coverLetter.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Forbidden: You do not own this cover letter" });
+    }
+
+    return res.status(200).json({ success: true, coverLetter });
+  } catch (error) {
+    console.error("Error fetching cover letter:", error);
+    return res.status(500).json({ error: `Failed to fetch cover letter: ${error.message}` });
+  }
+});
+
+// 4. DELETE /api/cover-letter/:id
+router.delete("/:id", protect, async (req, res) => {
+  try {
+    const userId = req.userId || (req.user && (req.user.id || req.user._id));
+    if (!userId) {
+      return res.status(401).json({ error: "User unauthorized" });
+    }
+
+    const coverLetter = await CoverLetter.findById(req.params.id);
+    if (!coverLetter) {
+      return res.status(404).json({ error: "Cover letter not found" });
+    }
+
+    // Verify ownership via req.user.id, return 403 if not owned
+    if (coverLetter.userId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Forbidden: You do not own this cover letter" });
+    }
+
+    await CoverLetter.findByIdAndDelete(req.params.id);
+    return res.status(200).json({ success: true, message: "Deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting cover letter:", error);
+    return res.status(500).json({ error: `Failed to delete cover letter: ${error.message}` });
+  }
+});
+
 export default router;
+

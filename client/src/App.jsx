@@ -6,6 +6,8 @@ import ResumeBuilder from "./pages/ResumeBuilder";
 import Preview from "./pages/Preview";
 import AtsChecker from "./pages/AtsChecker";
 import AIFeatures from "./pages/AIFeatures";
+import CoverLetter from "./pages/CoverLetter";
+import CoverLetterList from "./pages/CoverLetterList";
 import { useDispatch } from "react-redux";
 import api from "./configs/api";
 import { login, setLoading } from "./app/features/authSlice";
@@ -52,6 +54,8 @@ const App = () => {
           <Route path="builder/:resumeId" element={<ResumeBuilder />} />
           <Route path="ats-checker" element={<AtsChecker />} />
           <Route path="ai-tools" element={<AIFeatures />} />
+          <Route path="cover-letter" element={<CoverLetter />} />
+          <Route path="cover-letters" element={<CoverLetterList />} />
         </Route>
 
         <Route path="view/:resumeId" element={<Preview />} />
