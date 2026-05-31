@@ -5,7 +5,7 @@ import { twMerge } from "tailwind-merge";
 const cn = (...inputs) => twMerge(clsx(inputs));
 
 // eslint-disable-next-line no-unused-vars
-const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "indigo" }) => {
+const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "indigo", onClick }) => {
   const colors = {
     indigo: "bg-[#EAF7F3] text-[#14805F] border-[#6ED6B3]/20",
     emerald: "bg-[#EAF7F3] text-[#38B487] border-[#6ED6B3]/20",
@@ -15,7 +15,13 @@ const StatCard = ({ title, value, icon: Icon, trend, trendValue, color = "indigo
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-slate-300">
+    <div 
+      onClick={onClick}
+      className={cn(
+        "bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md hover:border-slate-300",
+        onClick && "cursor-pointer hover:-translate-y-1"
+      )}
+    >
       <div className="flex items-center justify-between mb-4">
         <div className={cn("p-2.5 rounded-xl border", colors[color])}>
           <Icon className="size-6" />

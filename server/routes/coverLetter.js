@@ -5,9 +5,36 @@ import CoverLetter from "../models/CoverLetter.js";
 
 const router = express.Router();
 
+const generateRateLimit = new Map();
+
 router.post("/generate", protect, async (req, res) => {
   try {
-    const { resumeData, jobTitle, companyName, jobDescription, tone = "professional" } = req.body;
+    const userId = req.userId || (req.user && (req.user.id || req.user._id));
+    if (!userId) {
+      return res.status(401).json({ error: "User unauthorized" });
+    }
+
+    // Rate limiting: 5 requests per 60 seconds
+    const now = Date.now();
+    const windowMs = 60 * 1000;
+    const userLimit = generateRateLimit.get(userId.toString()) || { count: 0, startTime: now };
+
+    if (now - userLimit.startTime > windowMs) {
+      userLimit.count = 1;
+      userLimit.startTime = now;
+    } else {
+      userLimit.count += 1;
+      if (userLimit.count > 5) {
+        return res.status(429).json({ error: "Too many requests, please wait a moment" });
+      }
+    }
+    generateRateLimit.set(userId.toString(), userLimit);
+
+    let { resumeData, jobTitle, companyName, jobDescription, tone = "professional" } = req.body;
+
+    jobTitle = typeof jobTitle === 'string' ? jobTitle.trim() : jobTitle;
+    companyName = typeof companyName === 'string' ? companyName.trim() : companyName;
+    jobDescription = typeof jobDescription === 'string' ? jobDescription.trim() : jobDescription;
 
     // Validate presence of required fields
     if (!resumeData) {
@@ -21,6 +48,10 @@ router.post("/generate", protect, async (req, res) => {
     }
     if (!jobDescription) {
       return res.status(400).json({ error: "Missing required field: jobDescription" });
+    }
+
+    if (jobDescription.length < 50 || jobDescription.length > 5000) {
+      return res.status(400).json({ error: "Job description must be between 50 and 5000 characters" });
     }
 
     // Validate resumeData internal structure (personal_info, professional_summary, experience, skills, education)
@@ -95,10 +126,13 @@ Instructions:
       response.data.content[0] &&
       response.data.content[0].text
     ) {
-      const coverLetter = response.data.content[0].text;
+      const coverLetter = response.data.content[0].text.trim();
+      if (!coverLetter) {
+        return res.status(500).json({ error: "AI failed to generate content, please try again" });
+      }
       return res.status(200).json({ success: true, coverLetter });
     } else {
-      throw new Error("Invalid response structure from Anthropic API");
+      return res.status(500).json({ error: "AI failed to generate content, please try again" });
     }
   } catch (error) {
     console.error("Error generating cover letter:", error.response?.data || error.message);

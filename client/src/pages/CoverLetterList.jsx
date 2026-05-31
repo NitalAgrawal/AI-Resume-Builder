@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   Wand2,
   Calendar,
+  RefreshCw,
+  Search,
 } from "lucide-react";
 
 // Tone badge config
@@ -67,29 +69,44 @@ const formatDate = (dateStr) => {
 const CoverLetterList = () => {
   const [coverLetters, setCoverLetters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [viewModal, setViewModal] = useState(null); // holds the cover letter to view
   const [copiedId, setCopiedId] = useState(null);
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
 
   const { token } = useSelector((state) => state.auth);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    document.title = "My Cover Letters — Resunova";
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
+
+  const fetchAll = async () => {
+    try {
+      setError(false);
+      setLoading(true);
+      const { data } = await api.get("/api/cover-letter/all", {
+        headers: { Authorization: token },
+      });
+      setCoverLetters(data.coverLetters || []);
+    } catch (error) {
+      toast.error("Failed to load cover letters");
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch all cover letters
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const { data } = await api.get("/api/cover-letter/all", {
-          headers: { Authorization: token },
-        });
-        setCoverLetters(data.coverLetters || []);
-      } catch (error) {
-        toast.error("Failed to load cover letters");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
+    if (token) fetchAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [token]);
 
   // Delete a cover letter
   const handleDelete = async (id) => {
@@ -102,7 +119,7 @@ const CoverLetterList = () => {
       toast.success("Deleted successfully");
       if (viewModal?._id === id) setViewModal(null);
     } catch (error) {
-      toast.error("Failed to delete");
+      toast.error("Failed to delete. Please try again.");
     }
   };
 
@@ -117,6 +134,18 @@ const CoverLetterList = () => {
       toast.error("Failed to copy");
     }
   };
+
+  const filteredAndSorted = [...coverLetters]
+    .filter(cl => 
+      cl.companyName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      cl.jobTitle.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
+      if (sortBy === "oldest") return new Date(a.createdAt) - new Date(b.createdAt);
+      if (sortBy === "a-z") return a.companyName.localeCompare(b.companyName);
+      return 0;
+    });
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-12">
@@ -149,8 +178,26 @@ const CoverLetterList = () => {
         </div>
       )}
 
+      {/* Error State */}
+      {error && !loading && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-slate-200 rounded-2xl flex flex-col items-center justify-center p-16 text-center"
+        >
+          <div className="bg-rose-50 p-6 rounded-full mb-4">
+            <RefreshCw className="size-16 text-rose-300" />
+          </div>
+          <h3 className="text-2xl font-bold text-slate-800 tracking-tight">Failed to load</h3>
+          <p className="text-slate-500 max-w-sm mt-3 leading-relaxed mb-6">There was an error loading your cover letters. Please try again.</p>
+          <button onClick={fetchAll} className="flex items-center gap-2 px-6 py-3 bg-[#14805F] text-white font-bold rounded-xl hover:bg-[#0E5C49] transition-all shadow-md">
+            <RefreshCw className="size-5" /> Retry
+          </button>
+        </motion.div>
+      )}
+
       {/* Empty State */}
-      {!loading && coverLetters.length === 0 && (
+      {!error && !loading && coverLetters.length === 0 && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -175,10 +222,37 @@ const CoverLetterList = () => {
         </motion.div>
       )}
 
+      {/* Search and Sort */}
+      {!error && !loading && coverLetters.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by company or job title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#38B487] focus:border-[#38B487] outline-none transition-all"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full sm:w-48 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#38B487] focus:border-[#38B487] outline-none transition-all bg-white appearance-none cursor-pointer"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+              <option value="a-z">A-Z by Company</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Cover Letters Grid */}
-      {!loading && coverLetters.length > 0 && (
+      {!error && !loading && coverLetters.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {coverLetters.map((cl, index) => (
+          {filteredAndSorted.map((cl, index) => (
             <motion.div
               key={cl._id}
               initial={{ opacity: 0, y: 20 }}

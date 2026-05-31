@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import api from "../configs/api.js";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -34,6 +35,14 @@ const CoverLetter = () => {
   const [resumesLoading, setResumesLoading] = useState(true);
 
   const { token } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "Generate Cover Letter — Resunova";
+    if (!token) {
+      navigate('/login');
+    }
+  }, [token, navigate]);
 
   // Fetch user resumes on mount
   useEffect(() => {
@@ -58,6 +67,7 @@ const CoverLetter = () => {
     if (!jobTitle.trim()) return toast.error("Please enter a job title");
     if (!companyName.trim()) return toast.error("Please enter a company name");
     if (!jobDescription.trim()) return toast.error("Please enter a job description");
+    if (jobDescription.trim().length < 50) return toast.error("Job description must be at least 50 characters");
     if (!selectedResumeId) return toast.error("Please select a resume");
 
     setGenerating(true);
@@ -95,7 +105,12 @@ const CoverLetter = () => {
         toast.success("Cover letter generated!");
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || "Failed to generate cover letter");
+      const status = error?.response?.status;
+      if (status === 429) {
+        toast("Slow down! You've generated too many letters. Wait a moment.", { icon: "⚠️", style: { background: "#FEF08A", color: "#854D0E" } });
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
     } finally {
       setGenerating(false);
     }
@@ -203,8 +218,15 @@ const CoverLetter = () => {
                   onChange={(e) => setJobDescription(e.target.value)}
                   placeholder="Paste the job description here..."
                   rows={6}
+                  maxLength={5000}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#38B487] focus:border-[#38B487] outline-none transition-all resize-none bg-slate-50/50"
                 />
+                {jobDescription.length > 0 && jobDescription.length < 50 && (
+                  <p className="text-red-500 text-xs mt-1">Please enter at least 50 characters for better results</p>
+                )}
+                <div className="text-right text-xs text-slate-400 mt-1">
+                  {jobDescription.length} / 5000 characters
+                </div>
               </div>
 
               {/* Tone Selector */}
@@ -254,7 +276,7 @@ const CoverLetter = () => {
               {/* Generate Button */}
               <button
                 onClick={handleGenerate}
-                disabled={generating}
+                disabled={generating || !jobTitle.trim() || !companyName.trim() || !jobDescription.trim()}
                 className="w-full py-4 bg-[#14805F] text-white rounded-xl font-bold text-lg hover:bg-[#0E5C49] active:scale-[0.98] transition-all disabled:opacity-70 flex items-center justify-center gap-3 shadow-md shadow-[#6ED6B3]/10"
               >
                 {generating ? (
@@ -406,7 +428,7 @@ const CoverLetter = () => {
                     ) : saved ? (
                       <>
                         <CheckCircle2 className="size-5" />
-                        <span>Saved</span>
+                        <span>Saved ✓</span>
                       </>
                     ) : (
                       <>

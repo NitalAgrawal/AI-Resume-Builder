@@ -26,6 +26,8 @@ import RecentActivity from "../components/dashboard/RecentActivity";
 
 const Dashboard = () => {
   const [allResumes, setAllResumes] = useState([]);
+  const [coverLetters, setCoverLetters] = useState([]);
+  const [coverLettersLoading, setCoverLettersLoading] = useState(true);
   const [showCreateResume, setShowCreateResume] = useState(false);
   const [showUploadResume, setShowUploadResume] = useState(false);
   const [title, setTitle] = useState("");
@@ -44,6 +46,20 @@ const Dashboard = () => {
       setAllResumes(data.resumes);
     } catch (error) {
       toast.error(error?.response?.data?.message || error.message);
+    }
+  };
+
+  const loadCoverLetters = async () => {
+    try {
+      setCoverLettersLoading(true);
+      const { data } = await api.get("/api/cover-letter/all", {
+        headers: { Authorization: token },
+      });
+      setCoverLetters(data.coverLetters || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setCoverLettersLoading(false);
     }
   };
 
@@ -105,6 +121,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadAllResumes();
+    loadCoverLetters();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -135,8 +152,9 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard title="Total Resumes" value={allResumes.length} icon={FileText} trend="up" trendValue={12} color="indigo" />
+        <StatCard title="Cover Letters" value={coverLettersLoading ? <Loader2 className="size-4 animate-spin inline-block" /> : coverLetters.length} icon={FileText} color="emerald" onClick={() => navigate('/app/cover-letters')} />
         <StatCard title="ATS Score Avg." value="78%" icon={ShieldCheck} trend="up" trendValue={5} color="emerald" />
         <StatCard title="AI Suggestions" value="24" icon={Sparkles} trend="down" trendValue={2} color="purple" />
         <StatCard title="Jobs Applied" value="12" icon={Target} trend="up" trendValue={8} color="amber" />
@@ -225,6 +243,60 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Recent Cover Letters */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <FileText className="size-5 text-[#14805F]" />
+            Recent Cover Letters
+          </h3>
+          <button onClick={() => navigate('/app/cover-letters')} className="text-sm font-semibold text-[#14805F] hover:text-[#38B487] flex items-center gap-1">
+            View all <ArrowRight className="size-3" />
+          </button>
+        </div>
+        
+        <div className="space-y-3">
+          {coverLettersLoading ? (
+            <div className="text-center py-6">
+              <Loader2 className="size-6 animate-spin text-[#14805F] mx-auto" />
+            </div>
+          ) : coverLetters.length > 0 ? (
+            coverLetters.slice(0, 3).map((cl) => (
+              <div 
+                key={cl._id}
+                onClick={() => navigate('/app/cover-letters')}
+                className="group flex items-center justify-between p-4 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:border-[#6ED6B3]/40 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 group-hover:text-[#14805F] transition-colors">
+                    {cl.companyName}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">{cl.jobTitle}</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-xs font-medium text-slate-400">
+                    {new Date(cl.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                  </span>
+                  <div className="size-8 bg-white rounded-lg flex items-center justify-center border border-slate-100 shadow-sm group-hover:bg-[#EAF7F3] group-hover:border-[#6ED6B3]/30 transition-colors">
+                    <ArrowRight className="size-4 text-[#14805F]" />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+              <p className="text-slate-500 font-medium text-sm mb-3">No cover letters yet — Generate one now</p>
+              <button 
+                onClick={() => navigate('/app/cover-letter')}
+                className="text-sm font-bold text-[#14805F] hover:text-[#0E5C49] flex items-center justify-center gap-1 mx-auto transition-colors"
+              >
+                Generate Cover Letter <ArrowRight className="size-3" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

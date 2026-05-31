@@ -26,6 +26,7 @@ const Sidebar = () => {
     { icon: LayoutDashboard, label: "Dashboard", path: "/app" },
     { icon: FileText, label: "My Resumes", path: "/app/resumes" },
     { icon: ShieldCheck, label: "ATS Checker", path: "/app/ats-checker" },
+    { icon: FileText, label: "Cover Letters", path: "/app/cover-letters" },
     { icon: Sparkles, label: "AI Tools", path: "/app/ai-tools" },
     { icon: History, label: "History", path: "/app/history" },
   ];
