@@ -11,8 +11,10 @@ import {
   ShieldCheck,
   Activity,
   ArrowRight,
-  Loader2
+  Loader2,
+  DownloadIcon
 } from "lucide-react";
+import { useDownloadPDF } from "../hooks/useDownloadPDF";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -34,6 +36,8 @@ const Dashboard = () => {
   const [resume, setResume] = useState(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const { downloadPDF } = useDownloadPDF();
 
   const { user, token } = useSelector((state) => state.auth);
   const navigate = useNavigate();
@@ -119,6 +123,13 @@ const Dashboard = () => {
     }
   };
 
+  const handleDownload = async (e, id, template) => {
+    e.stopPropagation();
+    setDownloadingId(id);
+    await downloadPDF(id, template || "classic");
+    setDownloadingId(null);
+  };
+
   useEffect(() => {
     loadAllResumes();
     loadCoverLetters();
@@ -188,7 +199,18 @@ const Dashboard = () => {
                     <p className="text-sm font-bold text-slate-900 truncate">{resume.title}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">Updated {new Date(resume.updatedAt).toLocaleDateString()}</p>
                   </div>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className={`flex items-center gap-1 transition-opacity ${downloadingId === resume._id ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+                    <button 
+                      onClick={(e) => handleDownload(e, resume._id, resume.template)}
+                      className="p-1.5 text-slate-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-all"
+                      title="Download PDF"
+                    >
+                      {downloadingId === resume._id ? (
+                        <Loader2 className="size-4 animate-spin text-teal-600" />
+                      ) : (
+                        <DownloadIcon className="size-4 text-teal-600" />
+                      )}
+                    </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); deleteResume(resume._id); }}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"

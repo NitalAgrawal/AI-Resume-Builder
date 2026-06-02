@@ -15,7 +15,9 @@ import {
   Sparkles,
   User,
   Award,
+  Loader2,
 } from "lucide-react";
+import { useDownloadPDF } from "../hooks/useDownloadPDF";
 import PersonalInfoForm from "../components/PersonalInfoForm";
 import ResumePreview from "../components/ResumePreview";
 import TemplateSelector from "../components/TemplateSelector";
@@ -50,6 +52,9 @@ const ResumeBuilder = () => {
   const [activeSectionIndex, setactiveSectionIndex] = useState(0);
   const [removeBackground, setRemoveBackground] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  const [pdfTemplate, setPdfTemplate] = useState("classic");
+  const { downloadPDF, isDownloading } = useDownloadPDF(resumeId, pdfTemplate);
 
   const sections = [
     { id: "personal", name: "Personal Info", icon: User },
@@ -118,10 +123,6 @@ const ResumeBuilder = () => {
       navigator.clipboard.writeText(resumeUrl);
       toast.success("Resume link copied to clipboard!");
     }
-  };
-
-  const downloadResume = () => {
-    window.print();
   };
 
   const saveResume = async (manual = false) => {
@@ -210,9 +211,26 @@ const ResumeBuilder = () => {
             {resumeData.public ? <EyeIcon className="size-4" /> : <EyeOff className="size-4" />}
             {resumeData.public ? "Public" : "Private"}
           </button>
-           <button onClick={downloadResume} className="flex items-center gap-2 px-6 py-2 bg-[#14805F] text-white font-semibold rounded-xl hover:bg-[#0E5C49] transition-all shadow-md shadow-[#6ED6B3]/10">
-             <DownloadIcon className="size-4" /> Download
-           </button>
+          
+          <div className="flex items-center ml-2 border-l border-slate-200 pl-4 gap-2">
+             <select
+               value={pdfTemplate}
+               onChange={(e) => setPdfTemplate(e.target.value)}
+               className="px-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-[#38B487]"
+             >
+               <option value="classic">Classic</option>
+               <option value="modern">Modern</option>
+               <option value="minimal">Minimal</option>
+             </select>
+             <button 
+               onClick={() => downloadPDF()} 
+               disabled={isDownloading}
+               className="flex items-center gap-2 px-6 py-2 bg-[#14805F] text-white font-semibold rounded-xl hover:bg-[#0E5C49] transition-all shadow-md shadow-[#6ED6B3]/10 disabled:opacity-70 disabled:cursor-not-allowed min-w-[170px] justify-center"
+             >
+               {isDownloading ? <Loader2 className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
+               {isDownloading ? "Generating PDF..." : "Download PDF"}
+             </button>
+          </div>
         </div>
       </div>
 
