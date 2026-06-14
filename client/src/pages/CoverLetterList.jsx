@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import api from "../configs/api.js";
 import toast from "react-hot-toast";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
@@ -94,7 +95,7 @@ const CoverLetterList = () => {
         headers: { Authorization: token },
       });
       setCoverLetters(data.coverLetters || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load cover letters");
       setError(true);
     } finally {
@@ -118,7 +119,7 @@ const CoverLetterList = () => {
       setCoverLetters((prev) => prev.filter((cl) => cl._id !== id));
       toast.success("Deleted successfully");
       if (viewModal?._id === id) setViewModal(null);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete. Please try again.");
     }
   };

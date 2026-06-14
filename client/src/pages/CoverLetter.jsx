@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import api from "../configs/api.js";
 import toast from "react-hot-toast";
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Wand2,
@@ -52,7 +53,7 @@ const CoverLetter = () => {
           headers: { Authorization: token },
         });
         setResumes(data.resumes || []);
-      } catch (error) {
+      } catch {
         toast.error("Failed to load resumes");
       } finally {
         setResumesLoading(false);

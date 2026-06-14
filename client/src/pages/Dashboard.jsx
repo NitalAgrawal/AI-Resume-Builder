@@ -14,6 +14,7 @@ import {
   Loader2,
   DownloadIcon
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useDownloadPDF } from "../hooks/useDownloadPDF";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -180,9 +181,6 @@ const Dashboard = () => {
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-slate-900">Recent Resumes</h3>
-              <button onClick={() => navigate('/app/resumes')} className="text-sm font-semibold text-[#14805F] hover:text-[#38B487] flex items-center gap-1">
-                View all <ArrowRight className="size-3" />
-              </button>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
